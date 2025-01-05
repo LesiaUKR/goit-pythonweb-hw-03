@@ -18,5 +18,9 @@
     "2025-01-05 17:00:53.899698": {
         "username": "Eve",
         "message": "What a great way to practice web development!"
+    },
+    "2025-01-05 18:58:54.829804": {
+        "username": "Paul",
+        "message": "I want to check how my app works through Docker container!"
     }
 }
