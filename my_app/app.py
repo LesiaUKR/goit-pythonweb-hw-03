@@ -18,7 +18,10 @@ if not os.path.exists("storage"):
 
 
 class HttpHandler(BaseHTTPRequestHandler):
+    """HTTP handler for managing requests and serving files."""
+
     def do_GET(self):
+        """Handle GET requests and serve the appropriate HTML or static files."""
         parsed_url = urlparse(self.path)
         if parsed_url.path == "/":
             self.send_html_file("templates/index.html")
@@ -34,6 +37,7 @@ class HttpHandler(BaseHTTPRequestHandler):
             self.send_html_file("templates/error.html", 404)
 
     def do_POST(self):
+        """Handle POST requests to save messages and redirect to the success page."""
         content_length = int(self.headers["Content-Length"])
         post_data = self.rfile.read(content_length)
         parsed_data = parse_qs(post_data.decode("utf-8"))
@@ -55,6 +59,7 @@ class HttpHandler(BaseHTTPRequestHandler):
         self.save_message_to_json(message_data)
 
         async def send_message():
+            """Send message data to the WebSocket server."""
             uri = "ws://localhost:6000"
             async with websockets.connect(uri) as websocket:
                 await websocket.send(json.dumps(message_data))
@@ -66,6 +71,7 @@ class HttpHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def send_html_file(self, filename, status=200):
+        """Send an HTML file as a response."""
         try:
             with open(filename, "rb") as file:
                 self.send_response(status)
@@ -76,6 +82,7 @@ class HttpHandler(BaseHTTPRequestHandler):
             self.send_html_file("templates/error.html", 404)
 
     def send_static_file(self, filename, status=200):
+        """Send a static file such as CSS or images as a response."""
         try:
             with open(filename, "rb") as file:
                 self.send_response(status)
@@ -89,6 +96,7 @@ class HttpHandler(BaseHTTPRequestHandler):
             self.send_html_file("templates/error.html", 404)
 
     def save_message_to_json(self, message_data):
+        """Save a message to the JSON file with a timestamp as the key."""
         try:
             with open(DATA_FILE, "r", encoding="utf-8") as file:
                 data = json.load(file)
@@ -104,6 +112,7 @@ class HttpHandler(BaseHTTPRequestHandler):
             json.dump(data, file, indent=4, ensure_ascii=False)
 
     def show_messages(self):
+        """Render and display the saved messages on the read page."""
         env = Environment(loader=FileSystemLoader("templates"))
         template = env.get_template("read.html")
 
@@ -124,13 +133,17 @@ class HttpHandler(BaseHTTPRequestHandler):
 
 
 class WebSocketServer:
+    """WebSocket server for handling incoming messages."""
+
     async def ws_handler(self, websocket):
+        """Handle WebSocket connections and log received messages."""
         async for message in websocket:
             data = json.loads(message)
             logging.info(f"Received message: {data}")
 
 
 async def run_websocket_server():
+    """Run the WebSocket server."""
     server = WebSocketServer()
     async with websockets.serve(server.ws_handler, "0.0.0.0", 6000):
         logging.info("WebSocket server started on port 6000")
@@ -138,10 +151,12 @@ async def run_websocket_server():
 
 
 def start_websocket_server():
+    """Start the WebSocket server as a separate process."""
     asyncio.run(run_websocket_server())
 
 
 def run_http_server():
+    """Run the HTTP server to handle HTTP requests."""
     server_address = ("", 3000)
     httpd = HTTPServer(server_address, HttpHandler)
     logging.info("HTTP server started on port 3000")
@@ -149,6 +164,7 @@ def run_http_server():
 
 
 if __name__ == "__main__":
+    """Start both HTTP and WebSocket servers as separate processes."""
     http_process = Process(target=run_http_server)
     ws_process = Process(target=start_websocket_server)
 
